@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Category Theory Meetup</title>
+  <meta name="description" content="">
+  <meta name="author" content="Zhenhao Li">
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootswatch/2.3.1/amelia/bootstrap.min.css">
+<link rel="stylesheet" href="./frameworks/revealjs/css/reveal.min.css">
+  <link rel="stylesheet" href="./frameworks/revealjs/css/theme/sky.css" id="theme">
+  <link rel="stylesheet" href="./highlighters/highlight.js/css/vs2015.css" id="theme">
+  <!--[if lt IE 9]>
+  <script src="lib/js/html5shiv.js"></script>
+  <![endif]-->  <link rel="stylesheet" href = "assets/css/slidify-reveal.css">
+
+</head>
+<body>
+  
+  <div class="reveal">
+    <div class="slides">
+      <section class='' data-state='' id='slide-1'>
+  <h2>Function Types</h2>
+  <h3>Category theory study group</h3>
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+
+</section>
+<section class='' data-state='' id='slide-2'>
+  <h2>Functoriality Homework</h2>
+  
+</section>
+<section>
+   <section class='' data-state=''>
+    
+    <style type="text/css">
+p { text-align: left; }
+</style>
+
+<h3>Challenge 1</h3>
+
+<p>Show that the data type:</p>
+
+<pre><code class="haskell">data Pair a b = Pair a b
+</code></pre>
+
+<p>is a bifunctor. For additional credit implement all three methods of Bifunctor and use equational reasoning to show that these definitions are compatible with the default implementations whenever they can be applied.</p>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+   <section class='' data-state=''>
+    <h3>My Answer</h3>
+
+<pre><code class="haskell">
+instance Bifunctor Pair where
+  bimap f g (Pair x y) = Pair (f x) (g y)
+
+</code></pre>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+</section>
+<section>
+   <section class='' data-state=''>
+    <h3>Challenge 2</h3>
+    <p>Show the isomorphism between the standard definition of Maybe and this desugaring:</p>
+
+<pre><code class="haskell">type Maybe&#39; a = Either (Const () a) (Identity a)
+</code></pre>
+
+<p>Hint: Define two mappings between the two implementations. For additional credit, show that they are the inverse of each other using equational reasoning.</p>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+   <section class='' data-state=''>
+    <h3>My Answer</h3>
+
+<pre><code class="haskell">
+mapF ::  Maybe&#39; a -&gt; Maybe a
+mapF (Left (Const ())) = Nothing
+mapF (Right y) = Just (runIdentity y)
+
+mapB :: Maybe a -&gt; Maybe&#39; a
+mapB Nothing = Left (Const ())
+mapB (Just x) = Right (Identity x)
+
+</code></pre>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+</section>
+<section>
+   <section class='' data-state=''>
+    <h3>Challenge 3</h3>
+    <p>Let&#39;s try another data structure. I call it a PreList because it&#39;s a precursor to a List. It replaces recursion with a type parameter b.</p>
+
+<pre><code class="haskell">data PreList a b = Nil | Cons a b
+</code></pre>
+
+<p>You could recover our earlier definition of a List by recursively applying PreList to itself (we&#39;ll see how it&#39;s done when we talk about fixed points).</p>
+
+<p>Show that PreList is an instance of Bifunctor.</p>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+   <section class='' data-state=''>
+    <h3>My Answer</h3>
+
+<pre><code class="haskell">data PreList a b = Nil | Cons a b
+
+instance Bifunctor PreList where
+  bimap f g Nil = Nil
+  bimap f g (Cons a b) = Cons (f a) (g b)
+</code></pre>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+</section>
+<section>
+   <section class='' data-state=''>
+    <h3>Challenge 4</h3>
+    <p>Show that the following data types define bifunctors in a and b:</p>
+
+<pre><code class="haskell">data K2 c a b = K2 c
+data Fst a b = Fst a
+data Snd a b = Snd b
+</code></pre>
+
+<p>For additional credit, check your solutions agains Conor McBride???s paper Clowns to the Left of me, Jokers to the Right.</p>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+   <section class='' data-state=''>
+    <h3>My Answer</h3>
+
+<pre><code class="haskell">instance Bifunctor (K2 c) where
+  bimap f g (K2 c) = K2 c
+
+instance Bifunctor Fst where
+  bimap f g (Fst a) = Fst (f a)
+
+instance Bifunctor Snd where
+  bimap f g (Snd b) = Snd (g b)
+</code></pre>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+</section>
+<section>
+   <section class='' data-state=''>
+    <h3>Challenge 5</h3>
+    <p>Define a bifunctor in a language other than Haskell. Implement bimap for a generic pair in that language.</p>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+   <section class='' data-state=''>
+    <h3>My Answer</h3>
+
+<pre><code class="scala">trait Bifunctor[F[_,_]]{
+        def bimap[A,B,C,D](ac: A =&gt; C)(bd: B =&gt; D): F[A,B] =&gt; F[C,D]
+            =  first[A,D,C](ac) compose second[A,B,D](bd)
+
+        def first[A,B,C]: (A =&gt; C) =&gt; F[A,B] =&gt; F[C,B]
+            = (g) =&gt; bimap(g)(identity)
+
+        def second[A,B,D]: (B =&gt; D) =&gt; F[A,B] =&gt; F[A,D]
+        = bimap(identity)
+    }
+
+    case class Pair[A,B](a: A, b: B)
+
+    object Bifunctor{
+        implicit def pairBifunctor: Bifunctor[Pair] = new Bifunctor[Pair] {
+            override def bimap[A, B, C, D](ac: A =&gt; C)(bd: B =&gt; D): Pair[A, B] =&gt; Pair[C, D] = {
+                case Pair(a, b) =&gt; Pair(ac(a), bd(b))
+            }
+        }
+    }
+
+</code></pre>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+</section>
+<section>
+   <section class='' data-state=''>
+    <h3>Challenge 6</h3>
+    <p>Should std::map be considered a bifunctor or a profunctor in the two template arguments Key and T? How would you redesign this data type to make it so?</p>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+</section>
+<section class='' data-state='' id='slide-9'>
+  <h2>Function Types</h2>
+  
+</section>
+<section>
+   <section class='' data-state=''>
+    <h3>First things first</h3>
+    <p>It is important to understand </p>
+
+<ul>
+<li>isomorphism</li>
+<li>initial objects / terminal objects</li>
+<li>universal mapping proerties</li>
+<li>how to read category graphs</li>
+</ul>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+   <section class='' data-state=''>
+    <h3>Terminal objects</h3>
+
+<div style='text-align: center;'>
+    <img width = '760px' src='terminal.png' />
+</div>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+   <section class='' data-state=''>
+    <h3>Pick one</h3>
+
+<div style='text-align: center;'>
+    <img width = '760px' src='pick-one.png' />
+</div>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+   <section class='' data-state=''>
+    <h3>Products</h3>
+
+<div style='text-align: center;'>
+    <img width = '760px' src='products.png' />
+</div>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+   <section class='' data-state=''>
+    <h3>Pick a product</h3>
+
+<div style='text-align: center;'>
+    <img width = '760px' src='pick-product.png' />
+</div>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+   <section class='' data-state=''>
+    <h3>Define the map  $ id \times f $</h3>
+
+<div style='text-align: center;'>
+    <img width = '480px' src='1xf.png' />
+</div>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+</section>
+<section>
+   <section class='' data-state=''>
+    <h3>Map object</h3>
+    <div style='text-align: center;'>
+    <img width = '760px' src='map-object.png' />
+</div>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+   <section class='' data-state=''>
+    <h3>Filling the gap</h3>
+
+<div style='text-align: center;'>
+    <img width = '760px' src='pick-map.png' />
+</div>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+   <section class='' data-state=''>
+    <h3>Challenges</h3>
+
+<div style='text-align: center;'>
+    <img width = '760px' src='map-object-excises.png' />
+</div>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+   <section class='' data-state=''>
+    <h3>More intuition</h3>
+
+<div style='text-align: center;'>
+    <img width = '760px' src='points1.png' />
+</div>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+   <section class='' data-state=''>
+    <h3>A map object can be seen as a collection of maps</h3>
+
+<div style='text-align: center;'>
+    <img width = '760px' src='points2.png' />
+</div>
+
+    <aside class='notes'>
+      
+    </aside>
+   </section>
+</section>
+<section class='' data-state='' id='slide-12'>
+  <h1>Thank you!</h1>
+  
+</section>
+    </div>
+  </div>
+</body>
+  <script src="./frameworks/revealjs/lib/js/head.min.js"></script>
+  <script src="./frameworks/revealjs/js/reveal.min.js"></script>
+  <script>
+  // Full list of configuration options available here:
+  // https://github.com/hakimel/reveal.js#configuration
+  Reveal.initialize({
+    controls: true,
+    progress: true,
+    history: true,
+    center: true,
+    theme: Reveal.getQueryHash().theme || 'sky', 
+    transition: Reveal.getQueryHash().transition || 'concave', 
+    dependencies: [
+    // Cross-browser shim that fully implements classList -
+    // https://github.com/eligrey/classList.js/
+      { src: './frameworks/revealjs/lib/js/classList.js', condition: function() { return !document.body.classList;}},
+      // Zoom in and out with Alt+click
+      { src: './frameworks/revealjs/plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
+      // Speaker notes
+      { src: './frameworks/revealjs/plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } },
+      // Remote control your reveal.js presentation using a touch device
+      //{ src: './frameworks/revealjs/plugin/remotes/remotes.js', async: true, condition: function() { return !!document.body.classList; } }
+      ]
+  });
+  </script>  <!-- MathJax: Fall back to local if CDN offline but local image fonts are not supported (saves >100MB) -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    tex2jax: {
+      inlineMath: [['$','$'], ['\\(','\\)']],
+      processEscapes: true
+    }
+  });
+</script>
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/2.0-latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<!-- <script src="https://c328740.ssl.cf1.rackcdn.com/mathjax/2.0-latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script> -->
+<script>window.MathJax || document.write('<script type="text/x-mathjax-config">MathJax.Hub.Config({"HTML-CSS":{imageFont:null}});<\/script><script src="./widgets/mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML"><\/script>')
+</script>
+<!-- LOAD HIGHLIGHTER JS FILES -->
+<script src="./highlighters/highlight.js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!-- DONE LOADING HIGHLIGHTER JS FILES --> 
+
+</html>
